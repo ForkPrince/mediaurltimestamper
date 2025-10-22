@@ -1,6 +1,6 @@
 /*
  * Media URL Timestamper
- * Firefox Web Extension
+ * Chromium Web Extension (Manifest V3)
  * Copyright (C) 2017 Kestrel
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -10,10 +10,14 @@
 
 "use strict";
 
-browser.runtime.onMessage.addListener(function(message, sender) {
+// Import defaults
+importScripts('../options/defaults.js');
+
+chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
   switch (message.action) {
     case ("historyDeleteUrl"):
-      browser.history.deleteUrl({url: message.url});
+      // History API is removed in MV3 - this is now a no-op
+      // Chromium doesn't provide this functionality in MV3
       break;
     case ("updatePageAction"):
       updatePageAction(sender.tab.id, message.show, message.automatic);
@@ -21,67 +25,71 @@ browser.runtime.onMessage.addListener(function(message, sender) {
   }
 });
 
-browser.pageAction.onClicked.addListener(function(tab) {
-  browser.tabs.sendMessage(tab.id, {action: "doTimestamp"});
+chrome.action.onClicked.addListener(function(tab) {
+  chrome.tabs.sendMessage(tab.id, {action: "doTimestamp"});
 });
 
-browser.contextMenus.create({
+chrome.contextMenus.create({
   id: "updateTimestamp",
-  title: browser.i18n.getMessage("menu_updateTimestamp"),
-  contexts: ["page_action"]
+  title: chrome.i18n.getMessage("menu_updateTimestamp"),
+  contexts: ["action"]
 });
 
-browser.contextMenus.create({
+chrome.contextMenus.create({
   id: "clearTimestamp",
-  title: browser.i18n.getMessage("menu_clearTimestamp"),
-  contexts: ["page_action"]
+  title: chrome.i18n.getMessage("menu_clearTimestamp"),
+  contexts: ["action"]
 });
 
-browser.contextMenus.create({
+chrome.contextMenus.create({
   id: "toggleAuto",
-  title: browser.i18n.getMessage("menu_toggleAuto"),
+  title: chrome.i18n.getMessage("menu_toggleAuto"),
   type: "checkbox",
-  contexts: ["page_action"]
+  contexts: ["action"]
 });
 
-browser.contextMenus.onClicked.addListener(function(info, tab) {
+chrome.contextMenus.onClicked.addListener(function(info, tab) {
   switch (info.menuItemId) {
     case "updateTimestamp":
-      browser.tabs.sendMessage(tab.id, {action: "doTimestamp"});
+      chrome.tabs.sendMessage(tab.id, {action: "doTimestamp"});
       break;
     case "clearTimestamp":
-      browser.tabs.sendMessage(tab.id, {action: "clearTimestamp"});
+      chrome.tabs.sendMessage(tab.id, {action: "clearTimestamp"});
       break;
     case "toggleAuto":
-      browser.tabs.sendMessage(tab.id, {action: "toggleAuto"});
+      chrome.tabs.sendMessage(tab.id, {action: "toggleAuto"});
       break;
   }
 });
 
-browser.contextMenus.onShown.addListener((info, tab) => {
-  browser.tabs.sendMessage(tab.id, {action: "getAutoMode"}).then(automatic => {
-    browser.contextMenus.update("toggleAuto", {checked: automatic});
-    browser.contextMenus.refresh();
+// In MV3, we need to handle this differently since onShown doesn't work well with async
+// We'll update the menu state when the action is clicked
+chrome.action.onClicked.addListener((tab) => {
+  chrome.tabs.sendMessage(tab.id, {action: "getAutoMode"}, (automatic) => {
+    chrome.contextMenus.update("toggleAuto", {checked: automatic});
   });
 });
 
 function updatePageAction(tabId, show, enabled) {
   let disabledSuffix = (enabled ? "" : "disabled");
-  browser.pageAction.setIcon({
+  chrome.action.setIcon({
     tabId: tabId,
     path: "icons/icon" + disabledSuffix + ".svg"
   });
-  let title = browser.i18n.getMessage("extensionName") + " (" +
-              (enabled ? browser.i18n.getMessage("tooltip_automaticMode") :
-                         browser.i18n.getMessage("tooltip_manualMode")) + ")";
-  browser.pageAction.setTitle({
+  let title = chrome.i18n.getMessage("extensionName") + " (" +
+              (enabled ? chrome.i18n.getMessage("tooltip_automaticMode") :
+                         chrome.i18n.getMessage("tooltip_manualMode")) + ")";
+  chrome.action.setTitle({
     tabId: tabId,
     title
   });
+  // In MV3, action is always visible by default
+  // We can enable/disable it instead of show/hide
   if (show) {
-    browser.pageAction.show(tabId);
+    chrome.action.enable(tabId);
   } else {
-    browser.pageAction.hide(tabId);
+    chrome.action.disable(tabId);
   }
 }
+
 

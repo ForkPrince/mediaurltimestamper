@@ -1,6 +1,6 @@
 /*
  * Media URL Timestamper
- * Firefox Web Extension
+ * Chromium Web Extension (Manifest V3)
  * Copyright (C) 2017 Kestrel
  *
  * This Source Code Form is subject to the terms of the Mozilla Public

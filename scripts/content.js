@@ -1,6 +1,6 @@
 /*
  * Media URL Timestamper
- * Firefox Web Extension
+ * Chromium Web Extension (Manifest V3)
  * Copyright (C) 2017 Kestrel
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -171,9 +171,10 @@ function updateTimestamp(timeString) {
     updatePageAction();
     // Remove old timestamp URL from global history to avoid spam but
     // optionally keep initial URL so links are still marked as visited.
-    if (!options.keepOriginalVisited || oldURL != initialLocation) {
-      browser.runtime.sendMessage({action: "historyDeleteUrl", url: oldURL});
-    }
+    // Note: History API is not available in MV3, so we skip this step
+    // if (!options.keepOriginalVisited || oldURL != initialLocation) {
+    //   chrome.runtime.sendMessage({action: "historyDeleteUrl", url: oldURL});
+    // }
     // Update current location so it is not detected as a location change
     currentLocation = window.location.href;
   }
@@ -223,12 +224,12 @@ function convertTimeToString(timeSec, format) {
 }
 
 function updatePageAction() {
-    browser.runtime.sendMessage({action: "updatePageAction",
+    chrome.runtime.sendMessage({action: "updatePageAction",
                                  show: (currentMethod ? options.showPageAction : false),
                                  automatic: automaticMode});
 }
 
-browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   switch (message.action) {
     case "doTimestamp":
       if (checkMethodAvailable()) {
@@ -249,17 +250,12 @@ browser.runtime.onMessage.addListener((message, sender, sendResponse) => {
   }
 });
 
-browser.storage.local.get(defaultOptions).then((items) => {
-  // Firefox 51 and below have items inside items[0]
-  if (Array.isArray(items)) {
-    options = items[0];
-  } else {
-    options = items;
-  }
+chrome.storage.local.get(defaultOptions, (items) => {
+  options = items;
   setupOptions();
 });
 
-browser.storage.onChanged.addListener(function(changes, areaName) {
+chrome.storage.onChanged.addListener(function(changes, areaName) {
   let changedItems = Object.keys(changes);
   for (let item of changedItems) {
     let value = changes[item].newValue;

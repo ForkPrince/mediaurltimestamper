@@ -1,6 +1,6 @@
 /*
  * Media URL Timestamper
- * Firefox Web Extension
+ * Chromium Web Extension (Manifest V3)
  * Copyright (C) 2017 Kestrel
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
@@ -27,15 +27,15 @@ function saveOption(e) {
   if (value != null) {
     let name = e.target.name;
     if (value === defaultOptions[name]) {
-      browser.storage.local.remove(name);
+      chrome.storage.local.remove(name);
     } else {
-      browser.storage.local.set({[name]: value});
+      chrome.storage.local.set({[name]: value});
     }
   }
 }
 
 function restoreOptions(event) {
-  browser.storage.local.get(defaultOptions).then((results) => {
+  chrome.storage.local.get(defaultOptions, (results) => {
     for (let key of Object.keys(results)) {
       let value = results[key];
       for (let el of document.getElementsByName(key)) {
@@ -58,7 +58,7 @@ function restoreOptions(event) {
 }
 
 function restoreDefaults() {
-  browser.storage.local.clear();
+  chrome.storage.local.clear();
   restoreOptions();
 }
 
@@ -69,19 +69,19 @@ let labels = document.querySelectorAll("label");
 for (let label of labels) {
   let inputId = label.getAttribute("for");
   if (inputId) {
-    label.textContent = browser.i18n.getMessage("options_" + inputId);
+    label.textContent = chrome.i18n.getMessage("options_" + inputId);
   }
 }
 
 let titles = document.getElementsByClassName("text-section-header");
 for (let title of titles) {
-  title.textContent = browser.i18n.getMessage("options_" + title.id);
+  title.textContent = chrome.i18n.getMessage("options_" + title.id);
 }
 
 let inputs = document.querySelectorAll("input, select");
 for (let input of inputs) {
   input.addEventListener("input", saveOption);
   if (input.type == "button") {
-    input.value = browser.i18n.getMessage("options_" + input.id);
+    input.value = chrome.i18n.getMessage("options_" + input.id);
   }
 }
