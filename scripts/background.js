@@ -74,7 +74,10 @@ function updatePageAction(tabId, show, enabled) {
   let disabledSuffix = (enabled ? "" : "disabled");
   chrome.action.setIcon({
     tabId: tabId,
-    path: "icons/icon" + disabledSuffix + ".svg"
+    path: {
+      "48": "icons/icon" + disabledSuffix + "48.png",
+      "128": "icons/icon" + disabledSuffix + "128.png"
+    }
   });
   let title = chrome.i18n.getMessage("extensionName") + " (" +
               (enabled ? chrome.i18n.getMessage("tooltip_automaticMode") :
